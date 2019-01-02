@@ -21,38 +21,38 @@ typedef struct
 
 } CNDH_NoArgsCmd_t;
 
-
-// command structure
 typedef struct
 {
    uint8    CmdHeader[CFE_SB_CMD_HDR_SIZE];
 
-} cndh_cmd_eps_t;
-#define CNDH_CMD_EPS_LENGTH   sizeof ( cndh_cmd_eps_t )
+} cndh_epscmd_t;
 
-typedef struct
-{
-   uint8    CmdHeader[CFE_SB_CMD_HDR_SIZE];
-
-} cndh_cmd_coms_t;
-#define CNDH_CMD_COMS_LENGTH   sizeof ( cndh_cmd_coms_t )
+#define CNDH_EPS_CMD_LNGTH   sizeof ( cndh_epscmd_t )
 
 typedef struct
 {
    uint8    CmdHeader[CFE_SB_CMD_HDR_SIZE];
 
-} cndh_cmd_adc_t;
-#define CNDH_CMD_ADC_LENGTH   sizeof ( cndh_cmd_adc_t )
+} cndh_comscmd_t;
+
+#define CNDH_COMS_CMD_LNGTH   sizeof ( cndh_comscmd_t )
 
 typedef struct
 {
    uint8    CmdHeader[CFE_SB_CMD_HDR_SIZE];
 
-} cndh_cmd_gnc_t;
-#define CNDH_CMD_GNC_LENGTH   sizeof ( cndh_cmd_gnc_t )
+} cndh_adccmd_t;
 
+#define CNDH_ADC_CMD_LNGTH   sizeof ( cndh_adccmd_t )
 
-//
+typedef struct
+{
+   uint8    CmdHeader[CFE_SB_CMD_HDR_SIZE];
+
+} cndh_gnccmd_t;
+
+#define CNDH_GNC_CMD_LNGTH   sizeof ( cndh_gnccmd_t )
+
 typedef struct
 {
 	uint8			tlmHeader[CFE_SB_TLM_HDR_SIZE];
@@ -61,7 +61,9 @@ typedef struct
 } cndh_flag_t;
 
 
-// CNDH App housekeeping
+/*
+** Type definition (CNDH App housekeeping)
+*/
 typedef struct
 {
     uint8              tlmHeader[CFE_SB_TLM_HDR_SIZE];
@@ -70,7 +72,9 @@ typedef struct
     uint8              spare[2];
 
 } cndh_hk_tlm_t ;
-#define CNDH_APP_HK_TLM_LENGTH   sizeof ( cndh_hk_tlm_t )
+
+
+#define CNDH_APP_HK_TLM_LNGTH   sizeof ( cndh_hk_tlm_t )
 
 typedef struct
 {
@@ -81,8 +85,10 @@ typedef struct
 	uint8	 MTQ_Control_status;
 	uint8	 Antenna_status;
 	uint16	 mode_status;
+}  cndh_log;
 
-}  cndh_log_t;
+#define CNDH_LOG_LNGTH   sizeof ( cndh_log )
+
 
 typedef struct
 {
@@ -97,7 +103,7 @@ typedef struct
 
 	uint16		AX100_Checksum;
 	uint32		Ground_time;
-}   cndh_locallog_t  ;
+}   cndh_locallog  ;
 
 #endif /* cndh_msg_app_h_ */
 

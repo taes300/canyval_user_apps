@@ -1,7 +1,7 @@
 /*
 ** $Id: $
 **
-** Purpose:  cFE Application "template" (EPS) header file
+** Purpose:  cFE Application "template" (ADC) header file
 **
 ** Author: Shinhye Moon  
 **
@@ -12,8 +12,8 @@
 */
 
 
-#ifndef _eps_app_h_
-#define _eps_app_h_
+#ifndef _adc_app_h_
+#define _adc_app_h_
 
 
 /************************************************************************
@@ -21,6 +21,9 @@
 *************************************************************************/
 
 #include "cfe.h"
+#include "adc_msgids.h"
+#include "adc_perfids.h"
+//#include "adc_functions.h"
 #include "cfe.h"
 #include "cfe_error.h"
 #include "cfe_evs.h"
@@ -30,15 +33,12 @@
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
-#include "eps_perfids.h"
-#include "eps_msgids.h"
-//#include "eps_functions.h"
 
 
 /*************************************************************************
 ** Macro definitions
 **************************************************************************/
-#define EPS_PIPE_DEPTH                     32
+#define ADC_PIPE_DEPTH                     32
 
 
 /************************************************************************
@@ -50,23 +50,24 @@
 /*************************************************************************
 ** Exported data
 **************************************************************************/
-
+boolean adc_detumb;
 
 /************************************************************************
 ** Exported Functions
 *************************************************************************/
-void EPS_AppMain(void);
-void EPS_AppInit(void);
-void EPS_ProcessCommandPacket(void);
-void EPS_ProcessGroundCommand(void);
-void EPS_ProcessScheduleCommand(void);
-void EPS_ReportHousekeeping(void);
-void EPS_SendData(void);
-void EPS_ResetCounters(void);
-boolean EPS_VerifyCmdLength(CFE_SB_MsgPtr_t msg, uint16 ExpectedLength);
+void ADC_AppMain(void);
+void ADC_AppInit(void);
+void ADC_ProcessCommandPacket(void);
+void ADC_ProcessGroundCommand(void);
+void ADC_ProcessScheduleCommand(void);
+void ADC_ReportHousekeeping(void);
+void ADC_ResetCounters(void);
+void ADC_SendData(void);
+void ADC_Detumbling(void);
+boolean ADC_VerifyCmdLength(CFE_SB_MsgPtr_t msg, uint16 ExpectedLength);
 
 
-#endif /* _eps_app_ */
+#endif /* _adc_app_ */
 
 /************************/
 /*  End of File Comment */

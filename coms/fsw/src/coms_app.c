@@ -13,37 +13,39 @@
 ** $Log: $
 **
 
-/* Includes */
-
-// local application code include
+/************************************************************************
+** Includes
+*************************************************************************/
 #include "coms_app.h"
-
-// global application code include
-#include "cndh_msgids.h"
-#include "eps_msgids.h"
-
-// library and other code include
+#include "coms_perfids.h"
+#include "coms_msgids.h"
+//#include "coms_functions.h"
+#include "coms_msg.h"
+#include "coms_events.h"
 #include <stdio.h>
 
 
-/* COMS global data */
+//#include "cndh_msg.h"
+#include "cndh_msgids.h"
+#include "eps_msgids.h"
 
-// local application data
-coms_hk_tlm_t    		coms_hk_tlm;
-coms_log_t     	 		coms_log;
+/************************************************************************
+** COMS global data
+*************************************************************************/
 
-// command & send data list
-coms_log_cndh_t	 		coms_log_cndh;
+coms_hk_tlm_t    coms_HkTelemetryPkt;
+coms_log     	 coms_LogMsg;
+coms_log2     	 coms_LogMsg2;
 
-// receive log data list
-eps_log_coms_t		 	*eps_log_coms;
-ground_cmd_coms_t		*ground_cmd_coms;
 
-// application pointers
+coms_cndhcmd_t	 coms_cndhCmd;
+
+eps_log_2_coms		 *eps_LogMsg3;
+coms_groundcmd		 *coms_GroundCmd;
+
 CFE_SB_PipeId_t    coms_CommandPipe;
 CFE_SB_MsgPtr_t    comsMsgPtr;
 
-// event filter (on-going)
 static CFE_EVS_BinFilter_t  COMS_EventFilters[] =
        {  /* Event ID    mask */
           {COMS_STARTUP_INF_EID,       0x0000},
@@ -111,13 +113,17 @@ void COMS_AppInit(void)
 
 	COMS_ResetCounters();
 
-	CFE_SB_InitMsg(&coms_hk_tlm,
-					COMS_HK_TLM_MID,
-					COMS_APP_HK_TLM_LENGTH, TRUE);
+	CFE_SB_InitMsg(&coms_HkTelemetryPkt,
+		COMS_HK_TLM_MID,
+		COMS_APP_HK_TLM_LNGTH, TRUE);
 
-	CFE_SB_InitMsg(&coms_log,
+	CFE_SB_InitMsg(&coms_LogMsg,
         			COMS_LOGMSG_MID,
-					COMS_LOG_LENGTH, TRUE);
+					COMS_APP_LOG_LNGTH, TRUE);
+
+	CFE_SB_InitMsg(&coms_cndhCmd,
+        			CNDH_CMD_MID,
+					COMS_CNDH_CMD_LNGTH, TRUE);
 
 
     CFE_EVS_SendEvent (COMS_STARTUP_INF_EID, CFE_EVS_INFORMATION,
@@ -148,7 +154,7 @@ void COMS_ProcessCommandPacket(void)
 			break;
 
         default:
-        	coms_hk_tlm.coms_command_error_count++;
+            coms_HkTelemetryPkt.coms_command_error_count++;
             CFE_EVS_SendEvent(COMS_COMMAND_ERR_EID,CFE_EVS_ERROR,
 			"COMS: invalid command packet,MID = 0x%x", MsgId);
             break;
@@ -165,10 +171,11 @@ void COMS_ProcessGroundCommand(void)
     uint16 CommandCode;
 
     CommandCode = CFE_SB_GetCmdCode(comsMsgPtr);
+    coms_HkTelemetryPkt.coms_command_count++;
     switch (CommandCode)
     {
         case COMS_APP_NOOP_CC:
-        	coms_hk_tlm.coms_command_count++;
+            coms_HkTelemetryPkt.coms_command_count++;
             CFE_EVS_SendEvent(COMS_COMMANDNOP_INF_EID,CFE_EVS_INFORMATION,
 			"coms: NOOP command");
             break;
@@ -178,34 +185,32 @@ void COMS_ProcessGroundCommand(void)
             break;
 
 		case COMS_GROUND_COMMAND:
-			coms_hk_tlm.coms_command_count++;
-			CFE_SB_InitMsg (&coms_log_cndh, CNDH_CMD_MID, COMS_LOG_CNDH_LENGTH, TRUE);
-			ground_cmd_coms = (ground_cmd_coms_t *)comsMsgPtr;
-			coms_log_cndh.time = ground_cmd_coms->time;
-			coms_log_cndh.flag = ground_cmd_coms->flag;
-			OS_printf("L6:COMS, Ground command get\n");
-			CFE_SB_SetCmdCode((CFE_SB_MsgPtr_t) &coms_log_cndh,CNDH_COMMUNICATION_CC);
-			CFE_SB_SendMsg((CFE_SB_Msg_t *) &coms_log_cndh);
+			CFE_SB_InitMsg (&coms_LogMsg, CNDH_CMD_MID, sizeof(coms_log), TRUE);
+			coms_HkTelemetryPkt.coms_command_count++;
+			coms_GroundCmd = (coms_groundcmd *)comsMsgPtr;
+			coms_LogMsg.time = coms_GroundCmd->time;
+			coms_LogMsg.flag = coms_GroundCmd->flag;
+			OS_printf("COMS, Ground command get\n");
+			CFE_SB_SetCmdCode((CFE_SB_MsgPtr_t) coms_LogMsg.CmdCHeader,CNDH_COMMUNICATION_CC);
+			CFE_SB_SendMsg((CFE_SB_Msg_t *) &coms_LogMsg);
 			break;
 
 		case COMS_TRANSMIT_BEACON:
-			coms_hk_tlm.coms_command_count++;
-			if (coms_log.AX100_Status == 1)
-				OS_printf("L3:COMS, Transmit beacon. Done.\n");
+			if (coms_LogMsg2.AX100_Status == 1)
+				OS_printf("COMS, Transmit beacon. Done.\n");
 			break;
 
 		case COMS_GET_EPS_CC:
-			coms_hk_tlm.coms_command_count++;
-			eps_log_coms = (eps_log_coms_t *)comsMsgPtr;
-			if (eps_log_coms->AX100_Status == 1)
+			eps_LogMsg3 = (eps_log_2_coms *)comsMsgPtr;
+			if (eps_LogMsg3->AX100_Status == 1)
 			{
-				coms_log.AX100_Status = 1;
+				coms_LogMsg2.AX100_Status = 1;
 			}
-			OS_printf("L5:COMS, EPS data get\n");
+			OS_printf("ADCS, EPS data get\n");
 			break;
 
 		case COMS_SEND_HK:
-			CFE_SB_SendMsg((CFE_SB_Msg_t *) &coms_hk_tlm);
+			CFE_SB_SendMsg((CFE_SB_Msg_t *) &coms_HkTelemetryPkt);
 			break;
 
         /* default case already found during FC vs length test */
@@ -218,12 +223,12 @@ void COMS_ProcessGroundCommand(void)
 
 void COMS_ProcessScheduleCommand(void)
 {
-	CFE_SB_InitMsg (&coms_log_cndh, CNDH_CMD_MID, COMS_LOG_CNDH_LENGTH, TRUE);
+	CFE_SB_InitMsg (&coms_LogMsg, CNDH_CMD_MID, sizeof(coms_log), TRUE);
 
-	if (coms_log.AX100_Status == 1)
+	if (coms_LogMsg2.AX100_Status == 1)
 	{
-		coms_log_cndh.AX100_Checksum = 1;
-		OS_printf("L3:COMS, AX100 operation normal\n");
+		coms_LogMsg.AX100_Checksum = 1;
+		OS_printf("COMS, AX100 operation normal\n");
 	}
 
 	COMS_SendData();
@@ -232,16 +237,16 @@ void COMS_ProcessScheduleCommand(void)
 
 void COMS_ReportHousekeeping(void)
 {
-    CFE_SB_TimeStampMsg((CFE_SB_Msg_t *) &coms_hk_tlm);
-    CFE_SB_SendMsg((CFE_SB_Msg_t *) &coms_hk_tlm);
+    CFE_SB_TimeStampMsg((CFE_SB_Msg_t *) &coms_HkTelemetryPkt);
+    CFE_SB_SendMsg((CFE_SB_Msg_t *) &coms_HkTelemetryPkt);
     return;
 
 } /* End of template_ReportHousekeeping() */
 void COMS_ResetCounters(void)
 {
     /* Status of commands processed by the template App */
-	coms_hk_tlm.coms_command_count       = 0;
-	coms_hk_tlm.coms_command_error_count = 0;
+    coms_HkTelemetryPkt.coms_command_count       = 0;
+    coms_HkTelemetryPkt.coms_command_error_count = 0;
 
     CFE_EVS_SendEvent(COMS_COMMANDRST_INF_EID, CFE_EVS_INFORMATION,
 		"template: RESET command");
@@ -251,8 +256,8 @@ void COMS_ResetCounters(void)
 
 void COMS_SendData(void)
 {
-	 CFE_SB_SetCmdCode((CFE_SB_MsgPtr_t) &coms_log_cndh,CNDH_GET_COMS_CC);
-	 CFE_SB_SendMsg((CFE_SB_Msg_t *) &coms_log_cndh);
+	 CFE_SB_SetCmdCode((CFE_SB_MsgPtr_t) coms_LogMsg.CmdCHeader,CNDH_GET_COMS_CC);
+	 CFE_SB_SendMsg((CFE_SB_Msg_t *) &coms_LogMsg);
 
 	 return;
 }
@@ -276,7 +281,7 @@ boolean COMS_VerifyCmdLength(CFE_SB_MsgPtr_t msg, uint16 ExpectedLength)
            "Invalid msg length: ID = 0x%X,  CC = %d, Len = %d, Expected = %d",
               MessageID, CommandCode, ActualLength, ExpectedLength);
         result = FALSE;
-        coms_hk_tlm.coms_command_error_count++;
+        coms_HkTelemetryPkt.coms_command_error_count++;
     }
 
     return(result);

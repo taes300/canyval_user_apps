@@ -30,6 +30,8 @@
 #include "cndh_msg.h"
 #include "cndh_events.h"
 
+
+
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
@@ -65,7 +67,7 @@ boolean CNDH_VerifyCmdLength(CFE_SB_MsgPtr_t msg, uint16 ExpectedLength);
 
 void Separation_Mode_1U(void);
 void Stablization_Mode_1U(void);
-void normalEO_Mode_1U(void);
+//void normalEO_Mode_1U(void);
 #endif /* _cndh_app_ */
 
 /************************/

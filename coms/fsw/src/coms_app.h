@@ -31,10 +31,8 @@
 #include <errno.h>
 #include <unistd.h>
 
-#include "coms_perfids.h"
 #include "coms_msgids.h"
-#include "coms_msg.h"
-#include "coms_events.h"
+#include "coms_perfids.h"
 
 /*************************************************************************
 ** Macro definitions
